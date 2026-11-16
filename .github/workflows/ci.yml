@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: orbitwatch-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -37,3 +41,52 @@ jobs:
       - name: Collect container logs
         if: failure()
         run: docker logs orbitwatch-ci || true
+      - name: Save verified model artifacts
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbitwatch-models
+          path: |
+            artifacts/metrics.json
+            artifacts/*-model.joblib
+            artifacts/*-timeline.csv
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-ecr:
+    name: Publish verified OrbitWatch image to Amazon ECR
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: orbitwatch-models
+          path: artifacts
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and publish image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          set -euo pipefail
+          image="$REGISTRY/$REPOSITORY"
+          version="sha-${GITHUB_SHA:0:12}"
+          docker build --platform linux/amd64 \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -t "$image:$version" -t "$image:latest" .
+          docker push "$image:$version"
+          docker push "$image:latest"

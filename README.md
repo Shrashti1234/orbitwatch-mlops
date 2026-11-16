@@ -20,6 +20,8 @@ Open [the dashboard](http://127.0.0.1:8000/) and select **Zoom to event** on A-3
 
 Training downloads pinned telemetry and labels into `data/`. Fitted models, timelines, and `metrics.json` are generated in `artifacts/`. GitHub Actions runs the unit tests, trains the models, builds the Docker image, and checks the running container.
 
+After a successful push to `main`, GitHub Actions publishes the image to Amazon ECR with a commit tag and `latest`. EC2 runs the digest selected at deployment. To release a new version, pull its digest from ECR and replace the running OrbitWatch container with that image.
+
 ## Docker and MLflow
 
 After training, build and run the image.
