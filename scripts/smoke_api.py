@@ -18,7 +18,7 @@ def check(base: str) -> None:
         try:
             ready = call("/health")
             break
-        except URLError:
+        except (URLError, ConnectionError, TimeoutError):
             if time.monotonic() >= deadline:
                 raise
             time.sleep(1)
