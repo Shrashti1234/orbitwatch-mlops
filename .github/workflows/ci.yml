@@ -1,0 +1,39 @@
+name: OrbitWatch CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Test detection and evaluation
+        run: python -m unittest discover -s tests -v
+      - name: Train and backtest
+        run: python -m orbitwatch.train
+      - name: Build and start container
+        run: |
+          docker build -t orbitwatch:ci .
+          docker run -d --name orbitwatch-ci -p 127.0.0.1:8000:8000 orbitwatch:ci
+      - name: Verify dashboard and scoring API
+        run: python scripts/smoke_api.py
+      - name: Collect container logs
+        if: failure()
+        run: docker logs orbitwatch-ci || true

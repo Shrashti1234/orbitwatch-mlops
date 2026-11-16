@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1020">
+  <title>OrbitWatch | SMAP Telemetry</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/dashboard.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-inner">
+      <a class="brand" href="/"><span class="orbit" aria-hidden="true"></span>OrbitWatch</a>
+      <nav aria-label="Resources"><a href="/docs">API docs ↗</a><a href="https://ntrs.nasa.gov/citations/20210008188">Dataset ↗</a></nav>
+    </div>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="source">NASA SMAP · HISTORICAL REPLAY</p><h1>Telemetry anomaly review</h1>
+        <p>Find unusual readings in recorded satellite data. Compare model alerts with events studied by the research team.</p></div>
+      <div class="filters">
+        <label class="channel" for="channel">Sensor channel<select id="channel" disabled></select></label>
+        <label class="channel" for="detector">Detection method<select id="detector" disabled>
+          <option value="isolation_forest">Isolation Forest</option><option value="distance_from_median">Distance from median</option><option value="combined">Combined</option>
+        </select></label>
+      </div>
+    </section>
+    <p id="status" role="status" hidden></p>
+    <section class="metrics" aria-label="Selected channel metrics">
+      <div><span>Test samples</span><strong id="samples">—</strong></div>
+      <div><span>Labeled events detected</span><strong id="detected">—</strong></div>
+      <div><span>Unmatched alerts</span><strong id="unmatched">—</strong></div>
+      <div><span>Flagged samples outside labeled events</span><strong id="outside">—</strong></div>
+    </section>
+    <section class="panel" aria-labelledby="timeline-title">
+      <div class="panel-head"><div><h2 id="timeline-title">Channel timeline</h2><p id="range-label">Loading data…</p></div>
+        <div class="segmented"><button id="overview" type="button" aria-pressed="true" disabled>Full trace</button><button id="focus" type="button" aria-pressed="false" disabled>Zoom to event</button></div>
+      </div>
+      <div class="legend" aria-label="Chart legend"><span><i class="trace-key"></i>Reading / score</span><span><i class="event-key"></i>Event marked in the dataset</span><span><i class="alert-key"></i>Model alert</span><span><i class="threshold-key"></i>Alert threshold</span></div>
+      <div class="chart"><canvas id="readings" aria-label="Normalized sensor readings over time" role="img"></canvas><canvas id="scores" aria-label="Model anomaly scores over time" role="img"></canvas></div>
+      <p class="axis-note">Test sample index</p>
+    </section>
+    <section class="panel intervals" aria-labelledby="alerts-title">
+      <div class="panel-head"><div><h2 id="alerts-title">Alert intervals</h2><p>Select an interval to inspect it on the timeline.</p></div></div>
+      <div class="table-scroll"><table><thead><tr><th>Start sample</th><th>End sample</th><th>Length</th><th>Overlap with a labeled event</th></tr></thead><tbody id="alerts"></tbody></table></div>
+      <p id="no-alerts" hidden>No alerts on this channel at the current threshold.</p>
+    </section>
+  </main>
+</body>
+</html>
